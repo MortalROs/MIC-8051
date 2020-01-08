@@ -1,0 +1,846 @@
+			ORG 0000H
+			JMP MAIN    
+		
+			ORG 0023H			;VECTOR DE INTRERUPERE COMUNICATIE SERIALA
+			JMP SERIAL		
+		
+CONDITIE 	BIT 0				;CONDITIE=0-EFECTUL SE DERULEAZA
+								;CONDITIE=1-EFECTUL ESTE OPRIT
+
+COMANDA		DATA 30H
+VITEZA		DATA 31H
+
+			ORG 100H
+MAIN:		MOV SP,#60H			;INITIALIZARE SP
+			MOV IE,#90H			;VALIDARE INTRERUPERI SERIALE
+			CALL PROGSER		;PROGRAMARE COMUNICATIE SERIALA
+		
+			MOV P0,#00H			;STINGE PORTURILE CU EXCEPTIA P3.0 SI P3.1
+			MOV P1,#00H
+			MOV P2,#00H
+			MOV P3,#03H
+
+			MOV VITEZA,#80H	 	; INITIALIZARE VARIABILE
+			CLR CONDITIE
+			MOV COMANDA,#01H
+
+LOOP:		JB CONDITIE,SF
+			MOV A,COMANDA
+			CJNE A,#"1",CONTI1 	;COMANDA EFECT 1
+			CALL EFECT1
+			JMP SF
+
+CONTI1:		CJNE A,#"2",CONTI2	;COMANDA EFECT 2
+			CALL EFECT2
+			JMP SF
+
+CONTI2:		CJNE A,#"3",CONTI3	;COMANDA EFECT 3
+			CALL EFECT3
+			JMP SF
+
+CONTI3:		CJNE A,#"4",SF		;COMANDA EFECT 4
+			CALL EFECT4
+			JMP SF
+
+SF:
+			SJMP LOOP	   		;BUCLA INFINITA
+
+PROGSER:	MOV TMOD,#20H	  	;SUBRUTINA PENTRU PROGRAMARE UART
+			MOV TH1,#245	  	;BAUD RATE=4800, fUNI-DS6=10MHz
+			MOV TH0,#245
+			MOV PCON,#128
+			MOV SCON,#50H
+			SETB TR1
+			CLR TI
+			CLR RI
+			RET
+
+SERIAL:		PUSH ACC
+			JB TI,SF1
+RECEPTIE:	MOV A,SBUF	    	;CITIRE CARACTER SOSIT
+			MOV SBUF,A	    	;TRIMITERE ECOU
+
+			CJNE A,#"F",CONTIN1 ;COMANDA CRESTERE VITEZA
+			MOV A,VITEZA
+			CJNE A,#10H,SCADERE
+			JMP SF1
+
+SCADERE:	SUBB A,#10H
+			MOV VITEZA,A
+			JMP SF1
+		
+
+CONTIN1:	CJNE A,#"S",CONTIN2  ;COMANDA SCADERE VITEZA
+			MOV A,VITEZA
+			CJNE A,#0F0H,ADUNARE
+			JMP SF1
+
+ADUNARE:	ADD A,#10H
+			MOV VITEZA,A
+			JMP SF1
+
+CONTIN2:	CJNE A,#"1",CONTIN3  ;COMANDA EFECT 1
+			CLR CONDITIE
+			MOV COMANDA,A
+			JMP SF1
+
+CONTIN3:	CJNE A,#"2",CONTIN4  ;COMANDA EFECT 2
+			CLR CONDITIE
+			MOV COMANDA,A
+			JMP SF1
+
+CONTIN4:	CJNE A,#"3",CONTIN5  ;COMANDA EFECT 3
+			CLR CONDITIE
+			MOV COMANDA,A
+			JMP SF1		
+
+CONTIN5:	CJNE A,#"4",CONTIN7  ;COMANDA EFECT 4
+			CLR CONDITIE
+			MOV COMANDA,A
+			JMP SF1
+
+CONTIN7:	CJNE A,#"X",CONTIN8  ;COMANDA APRINDERE TOATE LED-URILE
+	        SETB CONDITIE
+			CALL APRINDE
+			JMP SF1
+
+CONTIN8:	CJNE A,#"Y",CONTIN9  ;COMANDA STINGERE TOATE LED-URILE
+			SETB CONDITIE
+			CALL STINGE
+			JMP SF1
+
+CONTIN9:	CJNE A,#"P",CONTIN10 ;COMANDA OPRIRE EFECT
+			SETB CONDITIE
+			JMP SF1
+
+CONTIN10:	CJNE A,#"T",SF1      ;COMANDA PORNIRE EFECT
+			CLR CONDITIE
+		
+
+SF1:		CLR TI		     ;CLEAR TRANSMIT FLAG
+			CLR RI		     ;CLEAR RECEIVE FLAG
+			POP ACC
+			RETI 
+
+STINGE:		MOV P0,#00H	     ;STINGE PORTURILE
+			MOV P1,#00H
+			MOV P2,#00H
+			MOV P3,#03H
+
+			RET
+
+APRINDE:	MOV P0,#0FFH	     ;APRINDE PORTURILE
+			MOV P1,#0FFH
+			MOV P2,#0FFH
+			MOV P3,#0FFH 
+
+			RET
+			
+TEMP:		MOV R1,VITEZA
+			ETI2:   MOV R0,#0FFH
+			ETI1:   NOP
+			DJNZ R0,ETI1
+			DJNZ R1,ETI2
+
+			RET
+			
+EFECT1:		MOV  P0, #01H		;START EFECT1
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #03H
+			MOV  P1, #01H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #07H
+			MOV  P1, #02H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #0EH
+			MOV  P1, #04H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #1CH
+			MOV  P1, #08H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #10H
+			MOV  P1, #18H
+			MOV  P2, #10H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #20H
+			MOV  P1, #30H
+			MOV  P2, #20H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #40H
+			MOV  P1, #60H
+			MOV  P2, #40H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C0H
+			MOV  P2, #81H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C1H
+			MOV  P2, #83H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C2H
+			MOV  P2, #87H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C4H
+			MOV  P2, #8EH
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C8H
+			MOV  P2, #9CH
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0D0H
+			MOV  P2, #0B8H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C0H
+			MOV  P2, #0A0H
+			MOV  P3, #73H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C0H
+			MOV  P2, #0C0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C1H
+			MOV  P2, #0C1H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C3H
+			MOV  P2, #0C2H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0C7H
+			MOV  P2, #0C4H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0CEH
+			MOV  P2, #0C8H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #0DCH
+			MOV  P2, #0D0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0B0H
+			MOV  P1, #0D0H
+			MOV  P2, #0D0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E0H
+			MOV  P1, #0E0H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E0H
+			MOV  P1, #0E1H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E0H
+			MOV  P1, #0E3H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E0H
+			MOV  P1, #0E7H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0F0H
+			MOV  P1, #0F0H
+			MOV  P2, #0F0H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F1H
+			MOV  P1, #0F0H
+			MOV  P2, #0F0H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F3H
+			MOV  P1, #0F1H
+			MOV  P2, #0F0H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F7H
+			MOV  P1, #0F2H
+			MOV  P2, #0F0H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F8H
+			MOV  P1, #0FCH
+			MOV  P2, #0F8H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F8H
+			MOV  P1, #0FCH
+			MOV  P2, #0F9H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0F9H
+			MOV  P1, #0FDH
+			MOV  P2, #0FBH
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			MOV  P0, #0FAH
+			MOV  P1, #0FEH
+			MOV  P2, #0FEH
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+			RET					;STOP EFECT1
+
+EFECT2:		MOV  P0, #00H		;START EFECT2
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #01H
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #02H
+			MOV  P1, #01H
+			MOV  P2, #80H
+			MOV  P3, #43H
+			CALL  TEMP
+
+			MOV  P0, #04H
+			MOV  P1, #82H
+			MOV  P2, #41H
+			MOV  P3, #23H
+			CALL  TEMP
+
+			MOV  P0, #04H
+			MOV  P1, #0C4H
+			MOV  P2, #23H
+			MOV  P3, #23H
+			CALL  TEMP
+
+			MOV  P0, #0C8H
+			MOV  P1, #28H
+			MOV  P2, #14H
+			MOV  P3, #13H
+			CALL  TEMP
+
+			MOV  P0, #30H
+			MOV  P1, #18H
+			MOV  P2, #0EH
+			MOV  P3, #07H
+			CALL  TEMP
+
+			MOV  P0, #10H
+			MOV  P1, #10H
+			MOV  P2, #0CH
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #08H
+			MOV  P2, #08H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #18H
+			MOV  P2, #18H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #18H
+			MOV  P1, #24H
+			MOV  P2, #24H
+			MOV  P3, #1BH
+			CALL  TEMP
+
+			MOV  P0, #24H
+			MOV  P1, #42H
+			MOV  P2, #42H
+			MOV  P3, #27H
+			CALL  TEMP
+
+			MOV  P0, #42H
+			MOV  P1, #81H
+			MOV  P2, #81H
+			MOV  P3, #43H
+			CALL  TEMP
+
+			MOV  P0, #81H
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			RET					;STOP EFECT2
+			
+EFECT3:		MOV  P0, #0E0H		;START EFECT3
+			MOV  P1, #0E0H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E1H
+			MOV  P1, #0E0H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E2H
+			MOV  P1, #0E0H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E4H
+			MOV  P1, #0E0H
+			MOV  P2, #0E0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0E8H
+			MOV  P1, #0E0H
+			MOV  P2, #0E1H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0F0H
+			MOV  P1, #0E0H
+			MOV  P2, #0E2H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E0H
+			MOV  P2, #0E4H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E1H
+			MOV  P2, #0E8H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E2H
+			MOV  P2, #0F0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E4H
+			MOV  P2, #0C0H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E8H
+			MOV  P2, #0C0H
+			MOV  P3, #0E7H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0F0H
+			MOV  P2, #0C0H
+			MOV  P3, #0EBH
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C0H
+			MOV  P2, #0C0H
+			MOV  P3, #0F3H
+			CALL  TEMP
+
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C0H
+			MOV  P2, #0C1H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C0H
+			MOV  P2, #0C2H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C0H
+			MOV  P2, #0C4H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C1H
+			MOV  P2, #0C8H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C2H
+			MOV  P2, #0D0H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C4H
+			MOV  P2, #0E0H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0C8H
+			MOV  P2, #80H
+			MOV  P3, #0C3H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0D0H
+			MOV  P2, #80H
+			MOV  P3, #0C7H
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #0E0H
+			MOV  P2, #80H
+			MOV  P3, #0CBH
+			CALL  TEMP
+
+			MOV  P0, #0C0H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #0D3H
+			CALL  TEMP
+
+			MOV  P0, #0C1H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #0E3H
+			CALL  TEMP
+
+			MOV  P0, #0C2H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #0C4H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #0C8H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #0D0H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #0E0H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			RET					;STOP EFECT3
+			
+EFECT4:		MOV  P0, #00H		;START EFECT4
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #80H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #60H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #01H
+			MOV  P1, #61H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #02H
+			MOV  P1, #62H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #04H
+			MOV  P1, #64H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #08H
+			MOV  P1, #08H
+			MOV  P2, #60H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #10H
+			MOV  P1, #10H
+			MOV  P2, #60H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #20H
+			MOV  P1, #20H
+			MOV  P2, #61H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #40H
+			MOV  P1, #40H
+			MOV  P2, #62H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #80H
+			MOV  P2, #64H
+			MOV  P3, #07H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #60H
+			MOV  P2, #08H
+			MOV  P3, #0BH
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #60H
+			MOV  P2, #10H
+			MOV  P3, #13H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #61H
+			MOV  P2, #21H
+			MOV  P3, #23H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #62H
+			MOV  P2, #42H
+			MOV  P3, #43H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #64H
+			MOV  P2, #84H
+			MOV  P3, #87H
+			CALL  TEMP
+
+			MOV  P0, #60H
+			MOV  P1, #08H
+			MOV  P2, #08H
+			MOV  P3, #0BH
+			CALL  TEMP
+
+			MOV  P0, #60H
+			MOV  P1, #10H
+			MOV  P2, #10H
+			MOV  P3, #13H
+			CALL  TEMP
+
+			MOV  P0, #61H
+			MOV  P1, #21H
+			MOV  P2, #21H
+			MOV  P3, #23H
+			CALL  TEMP
+
+			MOV  P0, #62H
+			MOV  P1, #42H
+			MOV  P2, #42H
+			MOV  P3, #43H
+			CALL  TEMP
+
+			MOV  P0, #04H
+			MOV  P1, #0E4H
+			MOV  P2, #84H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #08H
+			MOV  P1, #08H
+			MOV  P2, #68H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #10H
+			MOV  P1, #10H
+			MOV  P2, #10H
+			MOV  P3, #63H
+			CALL  TEMP
+
+			MOV  P0, #20H
+			MOV  P1, #20H
+			MOV  P2, #20H
+			MOV  P3, #63H
+			CALL  TEMP
+
+			MOV  P0, #40H
+			MOV  P1, #40H
+			MOV  P2, #40H
+			MOV  P3, #63H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #63H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #00H
+			MOV  P2, #60H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #01H
+			MOV  P1, #61H
+			MOV  P2, #01H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #02H
+			MOV  P1, #62H
+			MOV  P2, #02H
+			MOV  P3, #03H
+			CALL  TEMP
+
+			MOV  P0, #04H
+			MOV  P1, #64H
+			MOV  P2, #04H
+			MOV  P3, #07H
+			CALL  TEMP
+
+			MOV  P0, #08H
+			MOV  P1, #68H
+			MOV  P2, #08H
+			MOV  P3, #0BH
+			CALL  TEMP
+
+			MOV  P0, #10H
+			MOV  P1, #70H
+			MOV  P2, #10H
+			MOV  P3, #13H
+			CALL  TEMP
+
+			MOV  P0, #20H
+			MOV  P1, #0E0H
+			MOV  P2, #20H
+			MOV  P3, #23H
+			CALL  TEMP
+
+			MOV  P0, #40H
+			MOV  P1, #0C0H
+			MOV  P2, #40H
+			MOV  P3, #43H
+			CALL  TEMP
+
+			MOV  P0, #80H
+			MOV  P1, #80H
+			MOV  P2, #80H
+			MOV  P3, #83H
+			CALL  TEMP
+
+			MOV  P0, #00H
+			MOV  P1, #00H
+			MOV  P2, #00H
+			MOV  P3, #03H
+			CALL  TEMP
+			
+			RET					;STOP EFECT4
+			
+		END						;SFARSIT PROGRAM

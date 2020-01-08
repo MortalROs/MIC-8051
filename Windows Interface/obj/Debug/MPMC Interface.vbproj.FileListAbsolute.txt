@@ -1,0 +1,11 @@
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\bin\Debug\MPMC Interface.exe
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\bin\Debug\MPMC Interface.pdb
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\bin\Debug\MPMC Interface.xml
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.vbprojAssemblyReference.cache
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC_Interface.main.resources
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC_Interface.Resources.resources
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.vbproj.GenerateResource.cache
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.vbproj.CoreCompileInputs.cache
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.exe
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.xml
+E:\MEGA\FACULTATE\AN IV\MPMC\PROIECT\VB\MPMC Interface\MPMC Interface\obj\Debug\MPMC Interface.pdb
